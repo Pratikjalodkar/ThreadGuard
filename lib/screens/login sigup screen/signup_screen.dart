@@ -1,11 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/components/google_login.dart';
 import 'package:myapp/const/color.dart';
 import 'package:myapp/screens/login%20sigup%20screen/login_screen.dart';
 import 'package:myapp/screens/nav%20screens/mainscreen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupScreen extends StatefulWidget {
   @override

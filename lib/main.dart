@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/components/theme/heme.dart';
 import 'package:myapp/screens/login%20sigup%20screen/splash_screen.dart';
+// import 'package:myapp/screens/permission/permission.dart';
 // import 'package:myapp/screens/nav%20screens/mainscreen.dart';
 
 void main() async{
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         home: SplashScreen(),
+        // home: MyPermissionScreen(),
         // home:  const MainScreen(),
       ),
     );
