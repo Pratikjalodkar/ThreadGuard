@@ -4,6 +4,7 @@ import 'package:myapp/components/google_login.dart';
 import 'package:myapp/const/color.dart';
 import 'package:myapp/screens/login%20sigup%20screen/login_screen.dart';
 import 'package:myapp/screens/nav%20screens/mainscreen.dart';
+import 'package:myapp/sevices/auth.dart';
 
 class SignupScreen extends StatefulWidget {
   @override
@@ -17,6 +18,80 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
+
+  String email = "", password = "", name = "";
+
+  registration() async {
+    if (_passwordController.text.isNotEmpty &&
+        _nameController.text.isNotEmpty &&
+        _emailController.text.isNotEmpty &&
+        _passwordController.text == _confirmPasswordController.text) {
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+                email: _emailController.text,
+                password: _passwordController.text);
+        print("User created: ${userCredential.user?.email}");
+        await userCredential.user?.sendEmailVerification();
+
+        print("Email verification sent to: ${userCredential.user?.email}");
+        // if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+            "Registration link is send to your email address",
+            style: TextStyle(fontSize: 20.0),
+          ),
+          backgroundColor: Color.fromARGB(255, 77, 81, 79),
+        ));
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => LoginScreen()));
+        // }
+      } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
+        String errorMessage;
+
+        if (e.code == 'weak-password') {
+          print(e.code);
+          errorMessage = 'Make a strong password!';
+        } else if (e.code == 'email-already-in-use') {
+          errorMessage = 'Email already exists';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'The email address is invalid';
+        } else if (e.code == 'operation-not-allowed') {
+          errorMessage = 'Error!';
+        } else {
+          errorMessage = 'Error!';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              errorMessage,
+              style: TextStyle(fontSize: 18.0),
+            ),
+            backgroundColor: Color.fromARGB(255, 77, 81, 79),
+          ),
+        );
+
+        // if (e.code == 'weak-password') {
+        //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        //       backgroundColor: bg,
+        //       content: Text(
+        //         "Password Provided is too Weak",
+        //         style: TextStyle(fontSize: 18.0),
+        //       )));
+        // } else if (e.code == "email-already-in-use") {
+        //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        //       backgroundColor: bg,
+        //       content: Text(
+        //         "Account Already exists",
+        //         style: TextStyle(fontSize: 18.0),
+        //       )));
+        // }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -25,9 +100,9 @@ class _SignupScreenState extends State<SignupScreen> {
           decoration: BoxDecoration(
             image: DecorationImage(
               image: const AssetImage('assets/images/bg1.jpg'),
-              fit: BoxFit.fill, // Use BoxFit.fill to cover the full screen
+              fit: BoxFit.fill,
               colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(0.5), // Add opacity to the image
+                Colors.black.withOpacity(0.5),
                 BlendMode.srcOver,
               ),
             ),
@@ -35,9 +110,6 @@ class _SignupScreenState extends State<SignupScreen> {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             body: SingleChildScrollView(
-              // physics: NeverScrollableScrollPhysics(),
-              // shrinkWrap: true,
-              // children: [
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Form(
@@ -131,20 +203,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         },
                       ),
                       const SizedBox(height: 12),
-                      // TextFormField(
-                      //   controller: _confirmPasswordController,
-                      //   obscureText: true,
-                      //   decoration: InputDecoration(labelText: 'Confirm Password'),
-                      //   validator: (value) {
-                      //     if (value!.isEmpty) {
-                      //       return 'Please enter your password';
-                      //     }
-                      //     if (value != _passwordController.text) {
-                      //       return 'Passwords do not match';
-                      //     }
-                      //     return null;
-                      //   },
-                      // ),
                       TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: !_isPasswordVisible,
@@ -152,7 +210,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           color: Colors.white,
                         ),
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: 'Confirm Password',
                           labelStyle: const TextStyle(color: Colors.white70),
                           prefixIcon:
                               const Icon(Icons.key, color: Colors.white70),
@@ -172,10 +230,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         validator: (value) {
                           if (value!.isEmpty) {
-                            return 'Please enter your password';
-                          }
-                          if (value.length < 8) {
-                            return 'Password must be at least 8 characters';
+                            return 'Please confirm your password';
                           }
                           if (value != _passwordController.text) {
                             return 'Passwords do not match';
@@ -185,20 +240,15 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
-                        onPressed: () => {
-                          FirebaseAuth.instance
-                              .createUserWithEmailAndPassword(
-                                  email: _emailController.text,
-                                  password: _passwordController.text)
-                              .then((value) => {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          // builder: (context) => HomeScreen(),
-                                          builder: (context) =>
-                                              const MainScreen(),
-                                        ))
-                                  })
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              email = _emailController.text;
+                              name = _nameController.text;
+                              password = _passwordController.text;
+                            });
+                          }
+                          registration();
                         },
                         child: const Text(
                           'Sign Up',
@@ -206,7 +256,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-
                       const Row(
                         children: [
                           Expanded(
@@ -227,30 +276,35 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ],
                       ),
-
                       const SizedBox(
                         height: 12,
                       ),
-
-                      GoogleSignInButton(onPressed: () {}),
-                      // ElevatedButton(
-                      //     onPressed: () {},
-                      //     child: Row(
-                      //       mainAxisAlignment: MainAxisAlignment.center,
-                      //       children: [
-                      //         Image.asset(
-                      //           'assets/images/google.png',
-                      //           height: 30,
-                      //         ),
-                      //         Text(
-                      //           'Log in with Google',
-                      //           style: TextStyle(color: bg, fontSize: 18),
-                      //         ),
-                      //       ],
-                      //     )),
-
+                      ElevatedButton(
+                        onPressed: () {
+                          AuthMethods().signInWithGoogle(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.black,
+                          backgroundColor:
+                              Colors.white, // Change the text color as needed
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/google.png',
+                              height: 30,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Log in with Google',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // GoogleSignInButton(onPressed: () {}),
                       const SizedBox(height: 12),
-
                       TextButton(
                         onPressed: () {
                           // Navigate to login screen
@@ -279,29 +333,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
               ),
-              // ],
             ),
           ),
         ),
       ],
     );
   }
-
-  // Future<void> _submit() async {
-  //   if (_formKey.currentState!.validate()) {
-  //     final SharedPreferences sharedPreferences =
-  //           await SharedPreferences.getInstance();
-  //       sharedPreferences.setString('name', _nameController.text);
-  //       sharedPreferences.setString('email', _emailController.text);
-  //       sharedPreferences.setString('password', _passwordController.text);
-  //       Navigator.pushReplacement(
-  //           context,
-
-  //         MaterialPageRoute(
-  //             // builder: (context) => HomeScreen(),
-  //             builder: (context) => const MainScreen(),
-  //           )
-  //           );
-  //   }
-  // }
 }

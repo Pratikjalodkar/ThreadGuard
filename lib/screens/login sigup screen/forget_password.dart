@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/const/color.dart';
 
@@ -20,7 +21,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
         Container(
           decoration: BoxDecoration(
             image: DecorationImage(
-              image:const AssetImage('assets/images/bg1.jpg'),
+              image: const AssetImage('assets/images/bg1.jpg'),
               fit: BoxFit.fill, // Use BoxFit.fill to cover the full screen
               colorFilter: ColorFilter.mode(
                 Colors.black.withOpacity(0.5), // Add opacity to the image
@@ -92,34 +93,69 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
     );
   }
 
-  void _submit() {
+  void _submit() async {
+    String email = _emailController.text;
     if (_formKey.currentState!.validate()) {
       setState(() {
         _loading = true;
       });
-
+      try {
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+              "Password Reset Email has been sent !",
+              style: TextStyle(fontSize: 20.0),
+            ),
+            backgroundColor: Color.fromARGB(255, 77, 81, 79),
+          ));
+        }
+      } on FirebaseAuthException catch (e) {
+        print(e.code);
+        if (mounted) {
+          if (e.code == "user-not-found") {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  "No user found for that email.",
+                  style: TextStyle(fontSize: 20.0),
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  "Something went wrong!!",
+                  style: TextStyle(fontSize: 20.0),
+                ),
+              ),
+            );
+          }
+        }
+      }
       Future.delayed(const Duration(seconds: 2), () {
         setState(() {
           _loading = false;
         });
 
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Password Reset'),
-              content: const Text('An email with instructions has been sent.'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
+        // showDialog(
+        //   context: context,
+        //   builder: (BuildContext context) {
+        //     return AlertDialog(
+        //       title: const Text('Password Reset'),
+        //       content: const Text('An email with instructions has been sent.'),
+        //       actions: [
+        //         TextButton(
+        //           onPressed: () {
+        //             Navigator.pop(context);
+        //           },
+        //           child: const Text('OK'),
+        //         ),
+        //       ],
+        //     );
+        //   },
+        // );
       });
     }
   }

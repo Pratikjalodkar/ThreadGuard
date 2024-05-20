@@ -5,6 +5,8 @@ import 'package:myapp/const/color.dart';
 import 'package:myapp/screens/login%20sigup%20screen/forget_password.dart';
 import 'package:myapp/screens/login%20sigup%20screen/signup_screen.dart';
 import 'package:myapp/screens/nav%20screens/mainscreen.dart';
+import 'package:myapp/sevices/auth.dart';
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -17,19 +19,45 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
   bool _isPasswordVisible = false;
 
+  String email = "", password = "";
+  // userLogin() async {
+  //   try {
+  //     await FirebaseAuth.instance
+  //         .signInWithEmailAndPassword(email: email, password: password);
+  //     Navigator.push(
+  //         context, MaterialPageRoute(builder: (context) => const MainScreen()));
+  //   } on FirebaseAuthException catch (e) {
+  //     if (e.code == 'user-not-found') {
+  //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+  //           backgroundColor: Colors.orangeAccent,
+  //           content: Text(
+  //             "No User Found for that Email",
+  //             style: TextStyle(fontSize: 18.0),
+  //           )));
+  //     } else if (e.code == 'wrong-password') {
+  //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+  //           backgroundColor: Colors.orangeAccent,
+  //           content: Text(
+  //             "Wrong Password Provided by User",
+  //             style: TextStyle(fontSize: 18.0),
+  //           )));
+  //     }
+  //   }
+  // }
+
   @override
   void initState() {
     super.initState();
     // Check if the user is already signed in
-    FirebaseAuth.instance.authStateChanges().listen((User? user) {
-      if (user != null) {
-        // If user is already signed in, navigate to the main screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
-        );
-      }
-    });
+    // FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    //   if (user != null) {
+    //     // If user is already signed in, navigate to the main screen
+    //     Navigator.pushReplacement(
+    //       context,
+    //       MaterialPageRoute(builder: (context) => MainScreen()),
+    //     );
+    //   }
+    // });
   }
 
   @override
@@ -187,7 +215,33 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(
                           height: 25,
                         ),
-                        GoogleSignInButton(onPressed: () {}),
+                        ElevatedButton(
+                          onPressed: () {
+                            AuthMethods().signInWithGoogle(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.black,
+                            backgroundColor:
+                                Colors.white, // Change the text color as needed
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                'assets/images/google.png',
+                                height: 30,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Log in with Google',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // GoogleSignInButton(onPressed: () {
+                        //   AuthMethods().signInWithGoogle(context);
+                        // }),
                         const SizedBox(height: 25),
                         TextButton(
                           onPressed: () {
@@ -235,16 +289,55 @@ class _LoginScreenState extends State<LoginScreen> {
           email: _emailController.text,
           password: _passwordController.text,
         );
-      } catch (e) {
-        print('Error signing in: $e');
-        // Show error message to the user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Login Successfully!!",
+                style: TextStyle(fontSize: 18.0),
+              ),
+              backgroundColor: Color.fromARGB(255, 77, 81, 79),
+            ),
+          );
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const MainScreen()));
+        }
+      } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
+        String errorMessage;
+        if (e.code == 'user-not-found') {
+          errorMessage = 'No user found for that email.';
+        } else if (e.code == 'wrong-password') {
+          errorMessage = 'Wrong password provided for that user.';
+        }
+
+        // if (e.code == 'weak-password') {
+        //   errorMessage = 'Make a strong password!';
+        // } else if (e.code == 'email-already-in-use') {
+        //   errorMessage = 'The account already exists for that email.';
+        // } else if (e.code == 'invalid-email') {
+        //   errorMessage = 'The email address is invalid';
+        // } else if (e.code == 'operation-not-allowed') {
+        //   errorMessage = 'Error!';
+        // }
+        else {
+          errorMessage = 'Invalid Credentials!';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to sign in. Please try again.')),
+          SnackBar(
+            content: Text(
+              errorMessage,
+              style: TextStyle(fontSize: 18.0),
+            ),
+            backgroundColor: const Color.fromARGB(255, 77, 81, 79),
+          ),
         );
       } finally {
-        setState(() {
-          _loading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _loading = false;
+          });
+        }
       }
     }
   }
